@@ -8,9 +8,16 @@ const stopName = ref('')
 
 onMounted(async () => {
   try {
-    const data = await api('/reports/timeline?line_id=1')
-    marks.value = data.marks || []
-    stopName.value = data.stop_name || ''
+    // 与时间轴页同一口径：只取已落库单站报告，顶部轴展示最新一份报告的站点
+    const data = await api<{ stops: { report_id: number; stop_name: string; marks: any[] }[] }>(
+      '/reports/timeline?line_id=1',
+    )
+    const latest = (data.stops || []).reduce(
+      (acc: any, s) => (!acc || s.report_id > acc.report_id ? s : acc),
+      null as any,
+    )
+    marks.value = latest?.marks || []
+    stopName.value = latest?.stop_name || ''
   } catch {
     marks.value = []
   }
@@ -32,7 +39,7 @@ onMounted(async () => {
             v-for="m in marks"
             :key="m.trip_no"
             class="bg-bus-dot"
-            :class="{ 'bg-bus-tight': m.pct < 15 }"
+            :class="{ 'bg-bus-tight': m.status === 'bunching', 'bg-bus-warn': m.status === 'large_gap' }"
             :style="{ left: m.pct + '%' }"
             :title="`${m.trip_no} ${m.actual_arrive}`"
           >
