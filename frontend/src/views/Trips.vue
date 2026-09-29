@@ -4,9 +4,10 @@ import { api } from '../api'
 const trips = ref<any[]>([])
 const events = ref<any[]>([])
 onMounted(async () => {
-  trips.value = await api('/trips')
+  trips.value = await api('/trips?line_id=1')
+  // 班次页条带只用只读预览数据，绝不触发落库。
   try {
-    events.value = (await api('/reports/run?line_id=1', { method: 'POST' })).events || []
+    events.value = (await api('/reports/preview?line_id=1')).events || []
   } catch { events.value = [] }
 })
 function stripClass(s: string) {
